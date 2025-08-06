@@ -1,8 +1,4 @@
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
   const method = req.method;
   let userMessage = '';
 
@@ -18,17 +14,12 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Message is required' });
   }
 
-  const API_KEY = process.env.TYPEGPT_API_KEY;
-  if (!API_KEY) {
-    return res.status(500).json({ error: 'Missing API key' });
-  }
-
   try {
     const response = await fetch('https://fast.typegpt.net/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
+        'Authorization': `Bearer ${process.env.TYPEGPT_API_KEY || 'sk-BiEn3R0oF1aUTAwK8pWUEqvsxBvoHXffvtLBaC5NApX4SViv'}`
       },
       body: JSON.stringify({
         model: 'NiansuhAI/DeepSeek-R1',
@@ -50,20 +41,20 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
-      return res.status(response.status).json({
-        error: data?.error?.message || response.statusText || 'Upstream error',
-        full: data
-      });
+      return res.status(response.status).json({ error: data });
     }
 
+    // ✅ Remove any <think> block from the AI's response
     const originalContent = data.choices?.[0]?.message?.content || '';
     const cleanedContent = originalContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
+    // ✅ Enforce the name prefix
     const enforcedPrefix = 'This is AF-EVIL-AI speaking:';
     const finalResponse = cleanedContent.startsWith(enforcedPrefix)
       ? cleanedContent
       : `${enforcedPrefix} ${cleanedContent}`;
 
+    // ✅ Respond with locked-down identity and credit
     return res.status(200).json({
       name: 'AF-EVIL-AI',
       response: finalResponse,
@@ -76,4 +67,4 @@ export default async function handler(req, res) {
       details: error.message
     });
   }
-}
+  }
