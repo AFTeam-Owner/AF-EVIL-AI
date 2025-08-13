@@ -3,16 +3,15 @@ main = "worker.js"
 compatibility_date = "2024-01-01"
 
 [vars]
-RATE_LIMIT = "50"
+RATE_LIMIT = "10"
 RATE_LIMIT_WINDOW = "60000"
 
 [env.production.vars]
-RATE_LIMIT = "50"
+RATE_LIMIT = "20"
 RATE_LIMIT_WINDOW = "60000"
 
 [env.staging.vars]
-RATE_LIMIT = "50"
+RATE_LIMIT = "5"
 RATE_LIMIT_WINDOW = "60000"
 
-Secrets (use 'wrangler secret put' to set these)
-API_KEY = "sk-BiEn3R0oF1aUTAwK8pWUEqvsxBvoHXffvtLBaC5NApX4SViv"
+# Use 'wrangler secret put API_KEY' to set your OpenAI API key
