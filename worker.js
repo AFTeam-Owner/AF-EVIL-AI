@@ -1,4 +1,4 @@
-// Enhanced Cloudflare Worker with Security Improvements
+// DeepSeek-R1 API Worker with Hardcoded API Key
 
 export default {
   async fetch(request, env, ctx) {
@@ -8,7 +8,7 @@ export default {
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-Key",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
       "X-Content-Type-Options": "nosniff",
       "X-Frame-Options": "DENY",
       "X-XSS-Protection": "1; mode=block",
@@ -24,13 +24,8 @@ export default {
     }
 
     try {
-      // Environment validation
-      if (!env.API_KEY) {
-        throw new Error("API_KEY environment variable not configured");
-      }
-
       // Rate limiting with better implementation
-      const rateLimitResult = await checkRateLimit(request, env);
+      const rateLimitResult = await checkRateLimit(request);
       if (!rateLimitResult.allowed) {
         return new Response("Too Many Requests", {
           status: 429,
@@ -106,7 +101,7 @@ export default {
           temperature: 0.7
         };
 
-        return handleAPIRequest(payload, corsHeaders, env);
+        return handleAPIRequest(payload, corsHeaders);
       }
 
       // POST /
@@ -148,7 +143,7 @@ export default {
           }));
         }
 
-        return handleAPIRequest(payload, corsHeaders, env);
+        return handleAPIRequest(payload, corsHeaders);
       }
 
       return new Response(JSON.stringify({ error: "Not Found" }), {
@@ -176,14 +171,17 @@ export default {
   }
 };
 
+// Hardcoded API key
+const API_KEY = "sk-BiEn3R0oF1aUTAwK8pWUEqvsxBvoHXffvtLBaC5NApX4SViv";
+
 // Enhanced rate limiting with better implementation
-async function checkRateLimit(request, env) {
+async function checkRateLimit(request) {
   const ip = request.headers.get("cf-connecting-ip") || "unknown";
   const cache = caches.default;
   const cacheKey = `rate_limit_${ip}`;
   
-  const limit = parseInt(env.RATE_LIMIT || "10");
-  const windowMs = parseInt(env.RATE_LIMIT_WINDOW || "60000");
+  const limit = 10; // Default rate limit
+  const windowMs = 60000; // 1 minute window
   
   try {
     let limitData = await cache.match(cacheKey);
@@ -222,7 +220,7 @@ async function checkRateLimit(request, env) {
 }
 
 // Enhanced API request handling
-async function handleAPIRequest(payload, corsHeaders, env) {
+async function handleAPIRequest(payload, corsHeaders) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
@@ -231,7 +229,7 @@ async function handleAPIRequest(payload, corsHeaders, env) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${env.API_KEY}`
+        "Authorization": `Bearer ${API_KEY}`
       },
       body: JSON.stringify(payload),
       signal: controller.signal
@@ -250,7 +248,6 @@ async function handleAPIRequest(payload, corsHeaders, env) {
       data.choices[0].message.content = cleanResponse(data.choices[0].message.content);
     }
 
-    // Add rate limit headers
     return new Response(JSON.stringify(data), {
       headers: {
         "Content-Type": "application/json",
@@ -458,7 +455,7 @@ function getDocumentationHTML() {
   <div class="features">
     <div class="feature">
       <h3>🔒 Security</h3>
-      <p>Environment-based API keys, input sanitization, and security headers</p>
+      <p>Input sanitization, security headers, and comprehensive validation</p>
     </div>
     <div class="feature">
       <h3>⚡ Rate Limiting</h3>
@@ -485,11 +482,11 @@ function getDocumentationHTML() {
     </div>
     
     <div id="curl-get" class="example">
-      <pre>curl "https://your-worker.workers.dev/chat?msg=Hello"</pre>
+      <pre>curl "https://your-worker.your-subdomain.workers.dev/chat?msg=Hello"</pre>
     </div>
     
     <div id="js-get" class="example" style="display:none">
-      <pre>fetch("https://your-worker.workers.dev/chat?msg=Hello")
+      <pre>fetch("https://your-worker.your-subdomain.workers.dev/chat?msg=Hello")
   .then(response => response.json())
   .then(data => console.log(data));</pre>
     </div>
@@ -517,7 +514,7 @@ function getDocumentationHTML() {
     </div>
     
     <div id="curl-post" class="example">
-      <pre>curl -X POST "https://your-worker.workers.dev/" \\
+      <pre>curl -X POST "https://your-worker.your-subdomain.workers.dev/" \\
   -H "Content-Type: application/json" \\
   -d '{
     "model": "NiansuhAI/DeepSeek-R1",
@@ -530,7 +527,7 @@ function getDocumentationHTML() {
     </div>
     
     <div id="js-post" class="example" style="display:none">
-      <pre>fetch("https://your-worker.workers.dev/", {
+      <pre>fetch("https://your-worker.your-subdomain.workers.dev/", {
   method: "POST",
   headers: {
     "Content-Type": "application/json"
@@ -554,23 +551,11 @@ function getDocumentationHTML() {
   </div>
 
   <div class="endpoint">
-    <h2>⚙️ Environment Variables</h2>
-    <p>Configure these in your Cloudflare Worker settings:</p>
+    <h2>⚙️ Configuration</h2>
+    <p>Rate limiting configuration:</p>
     <ul>
-      <li><code>API_KEY</code> - Your OpenAI API key (required)</li>
-      <li><code>RATE_LIMIT</code> - Requests per minute (default: 10)</li>
-      <li><code>RATE_LIMIT_WINDOW</code> - Time window in ms (default: 60000)</li>
-    </ul>
-  </div>
-
-  <div class="endpoint">
-    <h2>📊 Rate Limiting</h2>
-    <p>Configurable rate limiting with proper headers:</p>
-    <ul>
-      <li><code>X-RateLimit-Limit</code> - Request limit</li>
-      <li><code>X-RateLimit-Remaining</code> - Remaining requests</li>
-      <li><code>X-RateLimit-Reset</code> - Reset timestamp</li>
-      <li><code>Retry-After</code> - Seconds to wait</li>
+      <li><code>Rate Limit</code>: 10 requests per minute</li>
+      <li><code>Rate Limit Window</code>: 60 seconds</li>
     </ul>
   </div>
 
