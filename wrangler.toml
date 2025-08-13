@@ -13,5 +13,3 @@ RATE_LIMIT_WINDOW = "60000"
 [env.staging.vars]
 RATE_LIMIT = "5"
 RATE_LIMIT_WINDOW = "60000"
-
-# Use 'wrangler secret put API_KEY' to set your OpenAI API key
