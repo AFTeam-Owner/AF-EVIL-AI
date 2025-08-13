@@ -1,3 +1,18 @@
-name = "deepseek-r1-proxy"
-main = "worker.js"  # or "./dist/worker.js" if using a build step
-compatibility_date = "2024-02-01"
+name = "deepseek-r1-api"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+RATE_LIMIT = "50"
+RATE_LIMIT_WINDOW = "60000"
+
+[env.production.vars]
+RATE_LIMIT = "50"
+RATE_LIMIT_WINDOW = "60000"
+
+[env.staging.vars]
+RATE_LIMIT = "50"
+RATE_LIMIT_WINDOW = "60000"
+
+Secrets (use 'wrangler secret put' to set these)
+API_KEY = "sk-BiEn3R0oF1aUTAwK8pWUEqvsxBvoHXffvtLBaC5NApX4SViv"
