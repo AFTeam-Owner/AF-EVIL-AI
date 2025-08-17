@@ -24,21 +24,6 @@ export default {
     }
 
     try {
-      // Rate limiting with better implementation
-      const rateLimitResult = await checkRateLimit(request);
-      if (!rateLimitResult.allowed) {
-        return new Response("Too Many Requests", {
-          status: 429,
-          headers: {
-            ...corsHeaders,
-            "Retry-After": rateLimitResult.retryAfter.toString(),
-            "X-RateLimit-Limit": rateLimitResult.limit.toString(),
-            "X-RateLimit-Remaining": "0",
-            "X-RateLimit-Reset": rateLimitResult.resetTime.toString()
-          }
-        });
-      }
-
       // Documentation Route
       if (url.pathname === "/docs" || url.pathname === "/") {
         return new Response(getDocumentationHTML(), {
@@ -173,51 +158,6 @@ export default {
 
 // Hardcoded API key
 const API_KEY = "sk-BiEn3R0oF1aUTAwK8pWUEqvsxBvoHXffvtLBaC5NApX4SViv";
-
-// Enhanced rate limiting with better implementation
-async function checkRateLimit(request) {
-  const ip = request.headers.get("cf-connecting-ip") || "unknown";
-  const cache = caches.default;
-  const cacheKey = `rate_limit_${ip}`;
-  
-  const limit = 10; // Default rate limit
-  const windowMs = 60000; // 1 minute window
-  
-  try {
-    let limitData = await cache.match(cacheKey);
-    let current = { count: 0, resetTime: Date.now() + windowMs };
-    
-    if (limitData) {
-      const data = await limitData.json();
-      if (Date.now() < data.resetTime) {
-        current = data;
-      } else {
-        // Reset counter for new window
-        current.resetTime = Date.now() + windowMs;
-      }
-    }
-    
-    const allowed = current.count < limit;
-    
-    if (allowed) {
-      current.count += 1;
-      await cache.put(cacheKey, new Response(JSON.stringify(current)), {
-        expirationTtl: Math.ceil(windowMs / 1000)
-      });
-    }
-    
-    return {
-      allowed,
-      limit,
-      remaining: Math.max(0, limit - current.count),
-      resetTime: current.resetTime,
-      retryAfter: Math.ceil((current.resetTime - Date.now()) / 1000)
-    };
-  } catch (error) {
-    console.error("Rate limit error:", error);
-    return { allowed: true }; // Fail open on cache errors
-  }
-}
 
 // Enhanced API request handling
 async function handleAPIRequest(payload, corsHeaders) {
@@ -449,7 +389,7 @@ function getDocumentationHTML() {
 <body>
   <header>
     <h1>DeepSeek-R1 API <span class="badge success">v2.0</span></h1>
-    <p>Enhanced AI API with security, rate limiting, and input validation</p>
+    <p>Enhanced AI API with security and input validation - no rate limits</p>
   </header>
 
   <div class="features">
@@ -458,8 +398,8 @@ function getDocumentationHTML() {
       <p>Input sanitization, security headers, and comprehensive validation</p>
     </div>
     <div class="feature">
-      <h3>⚡ Rate Limiting</h3>
-      <p>Configurable rate limits with proper headers and retry mechanisms</p>
+      <h3>⚡ No Rate Limits</h3>
+      <p>Unlimited requests without rate limiting restrictions</p>
     </div>
     <div class="feature">
       <h3>✅ Validation</h3>
@@ -552,10 +492,10 @@ function getDocumentationHTML() {
 
   <div class="endpoint">
     <h2>⚙️ Configuration</h2>
-    <p>Rate limiting configuration:</p>
+    <p>Configuration details:</p>
     <ul>
-      <li><code>Rate Limit</code>: 10 requests per minute</li>
-      <li><code>Rate Limit Window</code>: 60 seconds</li>
+      <li><code>API Version</code>: 2.0.0</li>
+      <li><code>Rate Limits</code>: None - unlimited requests</li>
     </ul>
   </div>
 
